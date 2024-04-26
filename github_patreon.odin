@@ -12,8 +12,6 @@ import "core:slice"
 SourceCodeTier :: 22839927
 SuperTier :: 22840288
 
-PatreonSecret :: ""
-GitHubSecret :: ""
 
 curl_get :: proc(url: string, header_strings: []string) -> ([]byte, bool) {
 	h := curl.easy_init()
@@ -47,10 +45,10 @@ curl_get :: proc(url: string, header_strings: []string) -> ([]byte, bool) {
 		return total_size
 	}
 
-	curl.easy_setopt(h, .WRITEFUNCTION, write_callback)
-	curl.easy_setopt(h, .SSL_VERIFYPEER, 0)
 	data := DataContext{nil, context}
+	curl.easy_setopt(h, .WRITEFUNCTION, write_callback)
 	curl.easy_setopt(h, .WRITEDATA, &data)
+	curl.easy_setopt(h, .SSL_VERIFYPEER, 0)
 	result := curl.easy_perform(h)
 
 	if result != .OK {
@@ -64,7 +62,7 @@ curl_get :: proc(url: string, header_strings: []string) -> ([]byte, bool) {
 get_all_emails_that_should_have_access :: proc() -> ([]string, bool) {
 	url := "https://www.patreon.com/api/oauth2/v2/campaigns/973462/members?include=currently_entitled_tiers&fields%5Bmember%5D=email"
 	headers := []string {
-		fmt.tprintf("Authorization: Bearer %s", PatreonSecret),
+		fmt.tprintf("Authorization: Bearer %s", patreon_secret),
 	}
 	members_data, members_data_ok := curl_get(url, headers)
 
@@ -130,7 +128,7 @@ invite_to_github :: proc(email: string) -> bool {
 	header_strings := []string {
 		"User-Agent: karl-zylinski",
 		"Accept: application/vnd.github+json",
-		fmt.tprintf("Authorization: Bearer %s", GitHubSecret),
+		fmt.tprintf("Authorization: Bearer %s", github_secret),
 		"X-GitHub-Api-Version: 2022-11-28",
 	}
 	
@@ -163,12 +161,52 @@ invite_to_github :: proc(email: string) -> bool {
 		fmt.println("Failed to set CURLOPT_POSTFIELDS: ", curl.easy_strerror(hres))
 	}
 
+	DataContext :: struct {
+		data: []u8,
+		ctx:  runtime.Context,
+	}
+
+	write_callback :: proc "c" (contents: [^]u8, size: uint, nmemb: uint, userp: rawptr) -> uint {
+		dc := transmute(^DataContext)userp
+		context = dc.ctx
+		total_size := size * nmemb
+		dc.data = make([]u8, int(total_size)) // <-- ALLOCATION
+		mem.copy(raw_data(dc.data), contents, int(total_size))
+		return total_size
+	}
+
+	data := DataContext{nil, context}
+	curl.easy_setopt(h, .WRITEFUNCTION, write_callback)
+	curl.easy_setopt(h, .WRITEDATA, &data)
 	curl.easy_setopt(h, .SSL_VERIFYPEER, 0)
 	result := curl.easy_perform(h)
-	return result == .OK
+	res_ok := result == .OK
+
+	if !res_ok {
+		return false
+	}
+
+	result_string := string(data.data)
+	fmt.println(result_string)
+	return true
 }
 
+patreon_secret: string
+github_secret: string
+
 main :: proc() {
+	if patreon_secret_data, patreon_secret_data_ok := os.read_entire_file("patreon_secret.txt"); patreon_secret_data_ok {
+		patreon_secret = string(patreon_secret_data)
+	} else {
+		panic("Put patreon secret in patreon_secret.txt")
+	}
+
+	if github_secret_data, github_secret_data_ok := os.read_entire_file("github_secret.txt"); github_secret_data_ok {
+		github_secret = string(github_secret_data)
+	} else {
+		panic("Put GitHub secret in github_secret.txt")
+	}
+
 	if emails, emails_ok := get_all_emails_that_should_have_access(); emails_ok {
 		AlreadyInvited :: struct {
 			already_invited: []string,
