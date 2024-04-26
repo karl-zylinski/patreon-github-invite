@@ -179,16 +179,7 @@ invite_to_github :: proc(email: string) -> bool {
 	curl.easy_setopt(h, .WRITEFUNCTION, write_callback)
 	curl.easy_setopt(h, .WRITEDATA, &data)
 	curl.easy_setopt(h, .SSL_VERIFYPEER, 0)
-	result := curl.easy_perform(h)
-	res_ok := result == .OK
-
-	if !res_ok {
-		return false
-	}
-
-	result_string := string(data.data)
-	fmt.println(result_string)
-	return true
+	return curl.easy_perform(h) == .OK
 }
 
 patreon_secret: string
