@@ -62,7 +62,7 @@ curl_get :: proc(url: string, header_strings: []string) -> ([]byte, bool) {
 }
 
 get_all_emails_that_should_have_access :: proc() -> ([]string, bool) {
-	url := "https://www.patreon.com/api/oauth2/v2/campaigns/973462/members?include=currently_entitled_tiers&fields%5Bmember%5D=email"
+	url := "https://www.patreon.com/api/oauth2/v2/campaigns/973462/members?include=currently_entitled_tiers&fields%5Bmember%5D=email&page%5Bcount%5D=500"
 	headers := []string {
 		fmt.tprintf("Authorization: Bearer %s", patreon_secret),
 	}
