@@ -8,6 +8,7 @@ import "core:encoding/json"
 import "core:strconv"
 import "core:os"
 import "core:slice"
+import "core:strings"
 
 SourceCodeTier :: 22839927
 SuperTier :: 22840288
@@ -32,7 +33,7 @@ curl_get :: proc(url: string, header_strings: []string) -> ([]byte, bool) {
 	}
 
 	DataContext :: struct {
-		data: []u8,
+		data: [dynamic]u8,
 		ctx:  runtime.Context,
 	}
 
@@ -40,8 +41,9 @@ curl_get :: proc(url: string, header_strings: []string) -> ([]byte, bool) {
 		dc := transmute(^DataContext)userp
 		context = dc.ctx
 		total_size := size * nmemb
-		dc.data = make([]u8, int(total_size)) // <-- ALLOCATION
-		mem.copy(raw_data(dc.data), contents, int(total_size))
+		writer := strings.Builder { buf = dc.data }
+		strings.write_bytes(&writer, slice.from_ptr(contents, int(total_size)))
+		dc.data = writer.buf
 		return total_size
 	}
 
@@ -56,7 +58,7 @@ curl_get :: proc(url: string, header_strings: []string) -> ([]byte, bool) {
 		return {}, false
 	}
 
-	return data.data, true
+	return data.data[:], true
 }
 
 get_all_emails_that_should_have_access :: proc() -> ([]string, bool) {
