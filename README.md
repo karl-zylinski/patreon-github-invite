@@ -1,4 +1,4 @@
-This is a small program that uses Patreon API to list all the members of a Patreon. It then takes those members and invites them to a GitHub organization using the GitHub API.
+This is a small program that uses Patreon API to list all the members of a Patreon. It then takes those members and invites them to a GitHub organization using the GitHub API. My Patreon page uses this: https://www.patreon.com/karl_zylinski
 
 It saves a list as a file of emails it has previously invited, so it does not do it twice (spamming GitHub with requests to invite people already invited can get you rate-limited).
 
