@@ -189,13 +189,13 @@ github_secret: string
 
 main :: proc() {
 	if patreon_secret_data, patreon_secret_data_ok := os.read_entire_file("patreon_secret.txt"); patreon_secret_data_ok {
-		patreon_secret = string(patreon_secret_data)
+		patreon_secret = strings.trim_space(string(patreon_secret_data))
 	} else {
 		panic("Put patreon secret in patreon_secret.txt")
 	}
 
 	if github_secret_data, github_secret_data_ok := os.read_entire_file("github_secret.txt"); github_secret_data_ok {
-		github_secret = string(github_secret_data)
+		github_secret = strings.trim_space(string(github_secret_data))
 	} else {
 		panic("Put GitHub secret in github_secret.txt")
 	}
